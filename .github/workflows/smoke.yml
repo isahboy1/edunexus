@@ -3,6 +3,10 @@ name: Smoke tests
 on:
   push:
   workflow_dispatch:
+  # Nightly regression sweep (02:30 UTC ≈ 03:30 West Africa Time) so failures
+  # surface even when nobody pushes.
+  schedule:
+    - cron: "30 2 * * *"
 
 concurrency:
   group: smoke-${{ github.ref }}
