@@ -1,0 +1,161 @@
+name: Smoke tests
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # ── Postgres service (see `services` below) ──────────────
+      PGPASSWORD: postgres
+      # ── Laravel (written into api/.env below) ────────────────
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_DATABASE: edunexus_laravel
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      # ── Next.js (read via prisma.config.ts / lib/db.ts) ──────
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/edunexus_next
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8000/api/v1
+      AUTH_SECRET: ci-auth-secret-0123456789abcdef
+      # ── Smoke suites ─────────────────────────────────────────
+      NEXT_URL: http://localhost:57362
+      API_URL: http://127.0.0.1:8000/api/v1
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: edunexus/package-lock.json
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: pgsql, pdo_pgsql, intl, zip, exif, pcntl
+          coverage: none
+
+      - name: Create databases
+        run: |
+          psql -h 127.0.0.1 -U postgres -d postgres -c "CREATE DATABASE edunexus_laravel;"
+          psql -h 127.0.0.1 -U postgres -d postgres -c "CREATE DATABASE edunexus_next;"
+
+      # ── Next.js side ─────────────────────────────────────────
+      - name: Install Next dependencies (runs prisma generate)
+        working-directory: edunexus
+        run: npm ci
+
+      - name: Unit tests (no server or database needed)
+        working-directory: edunexus
+        run: npm test
+
+      - name: Migrate + seed the Next database (Prisma, reads seed-credentials.json)
+        working-directory: edunexus
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+
+      - name: Build Next.js (production)
+        working-directory: edunexus
+        run: npx next build
+
+      # ── Laravel side ─────────────────────────────────────────
+      - name: Install Laravel + migrate/seed
+        working-directory: edunexus/api
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          # Write .env from scratch — CI env vars above match it exactly and
+          # the committed .env.example may drift from what the smokes need.
+          cat > .env <<'EOF'
+          APP_NAME=EDUNEXUS
+          APP_ENV=local
+          APP_KEY=
+          APP_URL=http://127.0.0.1:8000
+          DB_CONNECTION=pgsql
+          DB_HOST=127.0.0.1
+          DB_PORT=5432
+          DB_DATABASE=edunexus_laravel
+          DB_USERNAME=postgres
+          DB_PASSWORD=postgres
+          PAYMENT_GATEWAY=mock
+          PAYMENT_WEBHOOK_SECRET=dev-webhook-secret-change-me
+          FRONTEND_URL=http://localhost:57362
+          SESSION_DRIVER=array
+          CACHE_STORE=array
+          QUEUE_CONNECTION=sync
+          MAIL_MAILER=log
+          LOG_CHANNEL=stderr
+          EOF
+          php artisan key:generate --force
+          php artisan migrate --seed --force
+
+      # ── Run the stack + suites ───────────────────────────────
+      - name: Start Next.js production server (:57362)
+        working-directory: edunexus
+        run: |
+          nohup npx next start -p 57362 > next-start.log 2>&1 &
+
+      - name: Start Laravel API (:8000)
+        working-directory: edunexus/api
+        run: |
+          nohup php artisan serve --host=127.0.0.1 --port=8000 > laravel-serve.log 2>&1 &
+
+      - name: Wait for both backends
+        working-directory: edunexus
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/api/v1/public/settings >/dev/null \
+               && curl -sf http://localhost:57362/login >/dev/null; then
+              echo "Both backends up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backends did not come up in 30s"
+          exit 1
+
+      - name: Preflight
+        working-directory: edunexus
+        run: npm run preflight
+
+      - name: Smoke — admissions lifecycle (64 checks)
+        working-directory: edunexus
+        run: node scripts/smoke.mjs
+
+      - name: Smoke — testimonials pipeline (13 checks)
+        working-directory: edunexus
+        run: node scripts/smoke-testimonials.mjs
+
+      - name: Server logs on failure
+        if: failure()
+        working-directory: edunexus
+        run: |
+          echo "── next-start.log ──"
+          tail -60 next-start.log || true
+          echo "── api/laravel-serve.log ──"
+          tail -60 api/laravel-serve.log || true

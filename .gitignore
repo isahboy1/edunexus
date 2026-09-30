@@ -1,0 +1,37 @@
+# ── dependencies & build output ──────────────────────────────
+node_modules/
+vendor/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── environment & secrets (examples stay tracked) ────────────
+.env
+.env.*
+!.env.example
+
+# ── logs & transient state ───────────────────────────────────
+*.log
+**/storage/scheduler.pid
+.phpunit.result.cache
+.phpunit.cache/
+
+# ── user-uploaded documents (never commit) ───────────────────
+# The /* form keeps the directories themselves ignored while the
+# !-negations below re-include their .gitignore files.
+edunexus/storage/uploads/*
+edunexus/api/storage/app/private/*
+!edunexus/storage/uploads/.gitkeep
+!edunexus/api/storage/app/private/.gitkeep
+
+# ── generated Prisma client (npm postinstall regenerates it) ──
+edunexus/src/generated/
+
+# ── OS / editor noise ────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.freebuff/

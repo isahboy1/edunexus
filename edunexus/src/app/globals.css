@@ -1,0 +1,525 @@
+@import "tailwindcss";
+
+:root {
+  /* A restrained campus palette: deep ink, mineral blue and leaf green. */
+  --brand-950: #102237;
+  --brand-900: #173650;
+  --brand-800: #214b64;
+  --brand-700: #2b6074;
+  --brand-600: #347884;
+  --brand-500: #5b9295;
+  --brand-100: #dce9e9;
+  --brand-50: #eff5f3;
+  --accent-500: #387b5e;
+  --accent-600: #2d684f;
+  --accent-100: #e0eee6;
+  --ink-900: #1d2a32;
+  --ink-700: #3e4c52;
+  --ink-600: #617077;
+  --ink-400: #68767a;
+  --line: #e3e8e5;
+  --line-strong: #d0d9d4;
+  /* Canvas is a warm sage-tinted stone: white cards must sit ON it, visibly.
+     A near-white canvas is what gives interfaces that flat, generated look. */
+  --paper: #eef0e9;
+  --paper-2: #e5e8df;
+
+  /* Fine borders do most of the work; reserve depth for interactive surfaces. */
+  --shadow-xs: 0 1px 2px rgb(16 34 55 / 0.06), 0 1px 1px rgb(16 34 55 / 0.03);
+  --shadow-sm: 0 2px 6px rgb(16 34 55 / 0.08);
+  --shadow-md: 0 8px 22px -12px rgb(16 34 55 / 0.2);
+  --shadow-lg: 0 20px 44px -20px rgb(16 34 55 / 0.25);
+  --shadow-xl: 0 32px 64px -28px rgb(16 34 55 / 0.3);
+  --ring-brand: 0 0 0 3px rgb(52 120 132 / 0.16); 
+}
+
+@theme inline {
+  --color-brand-950: var(--brand-950);
+  --color-brand-900: var(--brand-900);
+  --color-brand-800: var(--brand-800);
+  --color-brand-700: var(--brand-700);
+  --color-brand-600: var(--brand-600);
+  --color-brand-500: var(--brand-500);
+  --color-brand-100: var(--brand-100);
+  --color-brand-50: var(--brand-50);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-100: var(--accent-100);
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-400: var(--ink-400);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+
+  /*
+   * Warm the default slate scale to the institutional gray. Legacy slate-*
+   * utilities (borders, dividers, inset panels, rings) across every page then
+   * harmonise with the sage-tinted canvas instead of reading cool blue-gray.
+   * Only the surface shades (50–300) are remapped — text usages elsewhere
+   * keep their original contrast.
+   */
+  --color-slate-50: #f6f8f3;
+  --color-slate-100: #eef1ea;
+  --color-slate-200: #e1e6de;
+  --color-slate-300: #c9d1c6;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink-900);
+  font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  font-feature-settings: "cv11", "ss01";
+}
+
+/* Display serif for page/section titles — the institutional voice. */
+.font-display, h1, h2 {
+  font-family: var(--font-display, Georgia, "Times New Roman", serif);
+  letter-spacing: -0.01em;
+}
+
+/*
+ * Tabular figures are opt-in via Tailwind's `tabular-nums` utility. Keeping them
+ * off by default matters because the ₦ glyph comes from a fallback font whose
+ * advance width differs from Geist's tabular figures — forcing tabular metrics
+ * makes the sign collide with the following digit in currency strings.
+ */
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.014em;
+  text-wrap: balance;
+}
+
+/* Slim, unobtrusive scrollbars (WebKit + Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c3ccc0 transparent;
+}
+*::-webkit-scrollbar { width: 9px; height: 9px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: #c0c9bd;
+  border: 2.5px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: #aab5a7; background-clip: content-box; }
+
+/* ── Buttons — flat, precise, no gradients ──────────── */
+.btn,
+.btn-primary,
+.btn-accent,
+.btn-outline,
+.btn-danger,
+.btn-ghost {
+  @apply inline-flex select-none items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none;
+}
+.btn-primary {
+  @apply bg-brand-700 text-white hover:bg-brand-800 active:bg-brand-900;
+}
+.btn-accent { @apply bg-accent-600 text-white hover:bg-accent-500 active:bg-accent-600; }
+.btn-outline { @apply border border-line-strong bg-white text-ink-700 hover:border-brand-600 hover:text-brand-800 hover:bg-brand-50/60; }
+.btn-danger { @apply bg-red-700 text-white hover:bg-red-800; }
+.btn-ghost { @apply text-ink-600 hover:bg-slate-100 hover:text-ink-900; }
+.btn-sm { @apply gap-1.5 rounded-md px-3 py-1.5 text-xs; }
+.btn-lg { @apply rounded-lg px-5 py-3 text-[15px]; }
+
+/* ── Surfaces — crisp hairlines, minimal rounding ───── */
+.card {
+  @apply rounded-lg border border-line bg-white;
+  box-shadow: var(--shadow-xs);
+}
+.card-p { @apply rounded-lg border border-line bg-white p-5; box-shadow: var(--shadow-xs); }
+.card-hover { @apply transition-colors duration-150; }
+.card-hover:hover { border-color: var(--line-strong); box-shadow: var(--shadow-md); }
+.card-flush { @apply rounded-lg border border-line bg-white; box-shadow: var(--shadow-xs); }
+
+/* Solid institutional surfaces read more like a campus brand than a template.
+   The dark panels carry a faint dotted grid plus a soft sheen from the top —
+   texture, not decoration. */
+.dot-grid {
+  background-image:
+    radial-gradient(ellipse 90% 55% at 25% 0%, rgb(255 255 255 / 0.055), transparent),
+    radial-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px);
+  background-size: auto, 20px 20px;
+}
+.surface-dark { background: var(--brand-950); }
+.hairline { @apply border-line; }
+
+/* ── Forms ───────────────────────────────────────────── */
+.label { @apply mb-1.5 block text-[12.5px] font-semibold text-ink-700; }
+.input, .select, .textarea {
+  @apply w-full rounded-md border border-line-strong bg-white px-3 py-2 text-sm text-ink-900 transition-colors
+         placeholder:text-ink-400 hover:border-ink-400 focus:border-brand-600 focus:outline-none;
+}
+.input:focus, .select:focus, .textarea:focus { box-shadow: var(--ring-brand); }
+.input:disabled, .select:disabled, .textarea:disabled { @apply cursor-not-allowed bg-slate-50 text-ink-600; }
+.textarea { @apply min-h-[96px] leading-relaxed; }
+.select {
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475467' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1.05rem;
+}
+input[type="checkbox"], input[type="radio"] { accent-color: var(--brand-700); }
+
+/* ── Badges & chips — quiet, square, dot-led ────────── */
+.badge,
+.badge-green,
+.badge-red,
+.badge-amber,
+.badge-blue,
+.badge-gray,
+.badge-purple {
+  @apply inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide;
+}
+.badge-green { @apply bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200/60; }
+.badge-red { @apply bg-red-50 text-red-800 ring-1 ring-inset ring-red-200/60; }
+.badge-amber { @apply bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200/60; }
+.badge-blue { @apply bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-100; }
+.badge-gray { @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200; }
+.badge-purple { @apply bg-violet-50 text-violet-800 ring-1 ring-inset ring-violet-200/60; }
+
+.chip { @apply inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-ink-600; }
+
+/* ── Tables — dense, ledger-like ────────────────────── */
+.table-base { @apply w-full text-left text-sm; }
+.table-base thead th {
+  @apply whitespace-nowrap border-b border-line-strong bg-slate-50/70 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-ink-600;
+}
+.table-base tbody td { @apply border-b border-line px-4 py-2.5 align-middle; }
+.table-base tbody tr { @apply transition-colors; }
+.table-base tbody tr:hover { background: #f5f7f1; }
+.table-base tbody tr:last-child td { @apply border-b-0; }
+
+.error-text { @apply mt-1.5 text-xs font-medium text-red-600; }
+.muted { @apply text-sm text-ink-600; }
+
+/* ── Portal sidebar nav ──────────────────────────────── */
+.nav-item {
+  @apply relative flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium text-brand-100/70 transition-colors duration-150;
+}
+.nav-item:hover { @apply bg-white/[0.07] text-white; }
+.nav-item-active { @apply bg-white/[0.11] text-white; }
+.nav-item-active::before {
+  content: "";
+  @apply absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full;
+  background: var(--accent-500);
+}
+
+/* ── Sidebar collapse (pre-hydration) ─────────────────────────────
+ * The inline script in the root layout sets `data-sidebar="collapsed"` on
+ * <html> before first paint, so the portal renders collapsed immediately —
+ * no flash of the expanded sidebar while React hydrates. The attribute is
+ * purely a render-side mirror of the state in PortalShell; layout logic
+ * (widths, padding, label visibility) reads it from here on desktop. */
+@media (min-width: 1024px) {
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation {
+    @apply w-[76px];
+  }
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation ~ div > div.flex.min-h-screen {
+    @apply lg:pl-[76px];
+  }
+  /*
+   * The rail hides the text layers (display:none) but keeps the controls
+   * accessible — every nav link carries an aria-label, and the identity
+   * buttons already had one. The same classes are un-hidden by the
+   * hover/focus-within overlay below, so plain CSS is enough to restore them.
+   */
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-label,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-soft,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-brand > div {
+    display: none;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-brand {
+    @apply justify-center px-2;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-identity-card {
+    @apply justify-center p-2;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-identity-card .min-w-0.flex-1,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-identity-card .sidebar-soft {
+    display: none;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-identity-actions {
+    @apply flex-col items-center gap-1;
+  }
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation .sidebar-identity-actions > * {
+    @apply h-9 w-9 flex-1 px-0;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation nav {
+    @apply px-2;
+  }
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation nav .nav-item {
+    @apply justify-center px-0;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation img {
+    margin: 0 auto;
+  }
+}
+
+/*
+ * VS Code-style hover overlay: hovering (or keyboard-focusing into) the
+ * collapsed rail floats the full expanded sidebar above the content without
+ * reflowing the page — the content column keeps its 76px reserve. Pure CSS
+ * driven by the same data-sidebar attribute; no React state involved.
+ */
+@media (min-width: 1024px) {
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within {
+    @apply w-[248px] shadow-[0_0_40px_-8px_rgba(0,0,0,0.55)] pr-1;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-label,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-soft,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-brand > div,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-label,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-soft,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-brand > div {
+    display: block;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-brand,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-brand {
+    @apply justify-start gap-3 px-5;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover nav,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within nav {
+    @apply px-3;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover nav .nav-item,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within nav .nav-item {
+    @apply justify-start gap-3 px-3;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-identity-card,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-identity-card {
+    @apply justify-start gap-3 px-3 py-2.5;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-identity-actions,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-identity-actions {
+    @apply flex-row items-stretch gap-2;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover .sidebar-identity-actions > *,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within .sidebar-identity-actions > * {
+    @apply h-auto w-auto flex-1 px-2 py-2;
+  }
+
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:hover img,
+  [data-sidebar="collapsed"] aside#portal-desktop-navigation:focus-within img {
+    margin: 0;
+  }
+}
+
+/* ── Academia-style public homepage primitives ─────────
+ * Scoped classes so the portal (dashboard/tables/forms) keeps the
+ * institutional look while the public pages follow the Academia template:
+ * teal #1eb2a6, deep teal #188f85, soft floating cards, centered
+ * eyebrow + heading section intros.
+ */
+.academia-eyebrow {
+  @apply text-[12px] font-semibold uppercase tracking-[2px] text-[#1eb2a6];
+}
+
+.academia-h2 {
+  @apply mt-2 text-[1.75rem] font-semibold leading-[1.2] text-[#1d2a32] sm:text-[2.1rem] lg:text-[2.5rem];
+  font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+  letter-spacing: -0.01em;
+}
+
+/* Academia hero runs a geometric sans, not the institutional serif. */
+.hero-title {
+  font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+.academia-btn {
+  @apply inline-flex select-none items-center justify-center gap-2 rounded-[4px] bg-[#1eb2a6] px-6 py-4 text-[12px] font-semibold uppercase tracking-[1px] text-white;
+  box-shadow: 0 24px 36px -11px rgba(0, 0, 0, 0.09);
+}
+.academia-btn:hover { background: #188f85; }
+
+.academia-card {
+  @apply rounded-md border border-line bg-white;
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.14);
+}
+
+.academia-counters { background: #188f85; }
+
+/* ── Misc utilities ──────────────────────────────────── */
+.progress-track { @apply h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70; }
+.progress-fill {
+  @apply h-full rounded-full transition-[width] duration-700 ease-out;
+  background: var(--brand-700);
+}
+
+.divide-row { @apply border-b border-slate-100 last:border-b-0; }
+
+/*
+ * Currency strings. Geist has no ₦ glyph, so it is drawn from the fallback font
+ * whose advance has no right side-bearing — at small sizes the sign touches the
+ * first digit. Spots that render currencies inline use an explicit
+ * <span class="mr-[3px]">₦</span>; table/label contexts use this wrapper.
+ */
+.currency {
+  font-variant-numeric: normal;
+}
+.currency .currency-sign {
+  margin-right: 3px;
+}
+
+/* ── Shared interface polish ─────────────────────────── */
+::selection { background: #dce9e9; color: var(--brand-950); }
+
+.card,
+.card-p,
+.card-flush {
+  border-radius: 8px;
+}
+
+.btn,
+.btn-primary,
+.btn-accent,
+.btn-outline,
+.btn-danger,
+.btn-ghost {
+  border-radius: 6px;
+}
+
+.table-base thead th {
+  background: #f3f5ef;
+}
+
+/* Motion */
+@keyframes hero-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+/*
+ * `backwards` (not `both`) so the transform is dropped once the animation
+ * ends — a lingering identity transform would turn this wrapper into the
+ * containing block for position:fixed modals rendered inside page content.
+ */
+.animate-fade-up { animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.skel {
+  @apply relative overflow-hidden rounded-lg bg-slate-100;
+}
+.skel::after {
+  content: "";
+  @apply absolute inset-0 -translate-x-full;
+  background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.7), transparent);
+  animation: shimmer 1.6s infinite;
+}
+
+:focus-visible { outline: 2px solid var(--brand-600); outline-offset: 3px; }
+
+#main-content,
+#portal-content { scroll-margin-top: 6rem; }
+
+a,
+button,
+input,
+select,
+textarea { touch-action: manipulation; }
+
+@media (forced-colors: active) {
+  :focus-visible { outline: 2px solid Highlight; }
+  .progress-fill { background: Highlight; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ── Print: official application form (…/print route) ─────────────
+ * The page renders OUTSIDE the portal shell; this stylesheet finishes the
+ * job on paper: no toolbar, no shadows, black-on-white, A4-friendly. */
+.print-root {
+  min-height: 100vh;
+  background: var(--paper-2);
+  padding: 24px 16px 48px;
+}
+.print-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto 16px;
+}
+.print-sheet {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 40px 48px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--line);
+  color: #000;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.print-letterhead { text-align: center; border-bottom: 3px double #000; padding-bottom: 14px; margin-bottom: 16px; }
+.print-letterhead h1 { font-size: 19px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+.print-sub { margin-top: 4px; font-size: 12.5px; color: #333; }
+.print-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px; margin-bottom: 18px; }
+.print-heading { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 22px 0 10px; }
+.print-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px 22px; }
+.print-row { display: flex; flex-direction: column; }
+.print-row-wide { grid-column: 1 / -1; display: flex; flex-direction: column; }
+.print-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #444; }
+.print-value { font-size: 13px; font-weight: 600; border-bottom: 1px dotted #999; padding-bottom: 1px; min-height: 18px; }
+.print-block { margin-bottom: 12px; }
+.print-block-title { font-size: 12.5px; font-weight: 700; margin-bottom: 5px; }
+.print-table { width: 100%; border-collapse: collapse; margin: 6px 0 4px; }
+.print-table th, .print-table td { border: 1px solid #000; padding: 4px 8px; text-align: left; font-size: 12px; }
+.print-table th { background: #f1f1f1; font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+.print-empty { color: #555; font-style: italic; }
+.print-paid-note { margin-top: 8px; font-size: 12.5px; }
+.print-declaration { margin-top: 26px; padding: 12px 14px; border: 1px solid #000; background: #fafafa; font-size: 12px; }
+.print-signatures { display: flex; justify-content: space-between; gap: 48px; margin-top: 42px; }
+.print-sign-line { border-bottom: 1px solid #000; height: 28px; min-width: 220px; }
+.print-signatures p { margin-top: 4px; font-size: 11px; color: #333; }
+.print-footer { margin-top: 24px; border-top: 1px solid #999; padding-top: 8px; font-size: 10.5px; color: #555; text-align: center; }
+
+@media print {
+  /* Only the sheet survives: hide toolbar, page background, root padding. */
+  .no-print { display: none !important; }
+  body { background: #fff !important; }
+  .print-root { background: #fff; padding: 0; min-height: auto; }
+  .print-sheet { box-shadow: none; border: none; max-width: none; padding: 0; }
+  .print-table th { background: #f1f1f1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-letterhead, .print-heading, .print-table, .print-sign-line { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  section { break-inside: avoid; page-break-inside: avoid; }
+  @page { size: A4; margin: 14mm 12mm; }
+}
