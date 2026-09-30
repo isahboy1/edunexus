@@ -192,7 +192,9 @@ class DatabaseSeeder extends Seeder
         // ── Staff users — credentials from the SHARED seed-credentials.json
         //    (same file the Next prisma/seed.ts reads, so both apps' demo
         //    accounts can never drift apart).
-        $credentialsPath = dirname(__DIR__, 2).'/seed-credentials.json';
+        // edunexus/seed-credentials.json lives at the edunexus/ app root (next
+        // to prisma/seed.ts, which reads the same file): api/database/seeders → 3 up.
+        $credentialsPath = dirname(__DIR__, 3).'/seed-credentials.json';
         $credentials = json_decode((string) file_get_contents($credentialsPath), true, 512, JSON_THROW_ON_ERROR);
         $seedPassword = $credentials['defaultPassword'];
         $seedStaff = collect($credentials['staff'])->keyBy('email');
