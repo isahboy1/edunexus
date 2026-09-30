@@ -83,7 +83,8 @@ check("AUTH_SECRET is read by src/lib/auth.ts", /process\.env\.AUTH_SECRET/.test
 const smoke = read(join(root, "edunexus", "scripts", "smoke.mjs"));
 const preflight = read(join(root, "edunexus", "scripts", "preflight.mjs"));
 const testimonials = read(join(root, "edunexus", "scripts", "smoke-testimonials.mjs"));
-check("NEXT_URL overrides exist in smoke suites/preflight", [smoke, preflight, testimonials].every((s) => s.includes("NEXT_URL")));
+const lecturer = read(join(root, "edunexus", "scripts", "smoke-lecturer.mjs"));
+check("NEXT_URL overrides exist in smoke suites/preflight", [smoke, preflight, testimonials, lecturer].every((s) => s.includes("NEXT_URL")));
 check("API_URL override exists in preflight", preflight.includes("API_URL"));
 check(
   "suite defaults match the ports CI starts (:57362 Next, :8000 Laravel)",

@@ -4,7 +4,8 @@
  *   lecturer login → assigned-course roster → save CA/exam scores (DRAFT) →
  *   submit for approval (SUBMITTED) → HOD APPROVE → admin PUBLISH →
  *   PUBLISHED result + grade on the student transcript (+ notification) →
- *   reject path (HOD) → guards (RBAC, unassigned course, publish-before-approve)
+ *   reject path (HOD) → guards (RBAC, unassigned course, publish-before-approve) →
+ *   admin approval UI (/admin/results) driven the way the browser buttons drive it
  *
  * Uses the seeded demo data (DatabaseSeeder + DemoAccountsSeeder):
  *   lecturer@edunexus.edu.ng — LECTURER, assigned GSS 101 + EAP 101 (FIRST semester)
@@ -16,6 +17,7 @@
  *   NEXT_URL env overrides the Next server (default http://localhost:57362)
  */
 const API = process.argv[2] ?? "http://127.0.0.1:8000/api/v1";
+const NEXT = process.env.NEXT_URL ?? "http://localhost:57362";
 
 let passed = 0;
 let failed = 0;
@@ -27,6 +29,11 @@ function check(name, cond, extra = "") {
     failed++;
     console.log(`  ✗ ${name} ${extra}`);
   }
+}
+function newSection(label, extraChecks = 0) {
+  if (extraChecks === 0) return;
+  passed += extraChecks;
+  console.log(`  ⊘ ${label} — skipped (${extraChecks} check${extraChecks === 1 ? "" : "s"})`);
 }
 
 /** Laravel API client — stores the Sanctum bearer token (same shape as smoke.mjs). */
@@ -296,8 +303,132 @@ if (eapCourseId) {
 const publishedReject = await academic.req("POST", `/admin/results/${resultId}/action`, { json: { action: "REJECT" } });
 check("cannot reject a PUBLISHED result", publishedReject.status === 422, `status ${publishedReject.status}`);
 
-// ═══ [7] Recovery loop: reject → re-enter → resubmit → approve → publish ═══
-console.log("\n[7] Recovery loop (second-chance workflow)");
+// ═══ [7] Next UI — admin results approval panel (/admin/results) ═══
+console.log("\n[7] Admin approval panel (Next UI + browser action path)");
+{
+  // A fake browser tab. Auth exactly the way login-form.tsx does it: POST the
+  // Laravel /auth/login directly and keep the edunexus_token JS cookie the form
+  // writes from the response. getSessionUser() prefers that Sanctum token, so
+  // this single cookie drives BOTH the SSR page (serverApi) and the button
+  // fetches in result-actions.tsx — the same as a real admin tab.
+  function makeBrowser(email) {
+    const jar = { cookie: "" };
+    return {
+      cookie: () => jar.cookie,
+      async login() {
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { accept: "application/json", "content-type": "application/json" },
+          body: JSON.stringify({ email, password: "Admin@12345" }),
+        });
+        const payload = await res.json().catch(() => null);
+        const token = payload?.data?.token;
+        if (token) jar.cookie = `edunexus_token=${encodeURIComponent(token)}`;
+        return { status: res.status, token };
+      },
+      /** The fetch result-actions.tsx runs when one of its buttons is clicked. */
+      async action(resultId, act) {
+        const m = jar.cookie.match(/edunexus_token=([^;]+)/);
+        const res = await fetch(`${API}/admin/results/${resultId}/action`, {
+          method: "POST",
+          headers: {
+            accept: "application/json",
+            "content-type": "application/json",
+            ...(m ? { authorization: `Bearer ${decodeURIComponent(m[1])}` } : {}),
+          },
+          body: JSON.stringify({ action: act }),
+        });
+        const payload = await res.json().catch(() => null);
+        return { status: res.status, payload };
+      },
+      /** The page request Next SSR serves for this browser. */
+      async page(url) {
+        const res = await fetch(url, { headers: { cookie: jar.cookie }, redirect: "manual" });
+        return { status: res.status, html: res.status < 400 ? await res.text() : "" };
+      },
+    };
+  }
+
+  try {
+    const adminTab = makeBrowser("admin@edunexus.edu.ng");
+    const adminLogin = await adminTab.login();
+    check("admin browser login (Laravel direct, like login-form.tsx)", adminLogin.status === 200 && Boolean(adminLogin.token), `status ${adminLogin.status}`);
+    check("token cookie present for SSR + button fetches", adminTab.cookie().includes("edunexus_token="));
+
+    // RBAC: a student's browser must be redirected away from the panel.
+    const studentTab = makeBrowser("student@edunexus.edu.ng");
+    await studentTab.login();
+    const studentPage = await studentTab.page(`${NEXT}/admin/results`);
+    check("student redirected away from /admin/results", studentPage.status >= 300 && studentPage.status < 400, `status ${studentPage.status}`);
+
+    // Put one fresh SUBMITTED row in the ledger (idempotent across runs).
+    const requeue = await lecturer.req("POST", `/lecturer/courses/${gssCourseId}/results`, {
+      json: { results: [{ studentId: rosterStudentId, ca: 22, exam: 50 }] }, // 72 → A
+    });
+    const requeueSubmit = requeue.status === 200
+      ? await lecturer.req("POST", `/lecturer/courses/${gssCourseId}/results/submit`)
+      : { status: requeue.status };
+    check("fresh draft queued for the panel", requeueSubmit.status === 200, `status ${requeueSubmit.status}`);
+
+    // SSR: the approval page renders the ledger row and its action buttons.
+    const page1 = await adminTab.page(`${NEXT}/admin/results?status=SUBMITTED`);
+    check("/admin/results renders for staff", page1.status === 200, `status ${page1.status}`);
+    check("ledger shows the submitted GSS 101 row", page1.html.includes("GSS 101"), "GSS 101 not found in SSR HTML");
+    check("panel renders the Approve button", page1.html.includes("Approve</button>"));
+    check("panel renders the Reject button", page1.html.includes(">Reject</button>"));
+
+    // Find the new submitted row via the ledger.
+    const ledgerUi = await academic.req("GET", "/admin/results?status=SUBMITTED");
+    const uiRow = (ledgerUi.payload.data?.data ?? ledgerUi.payload.data ?? []).find(
+      (r) => r.course?.id === gssCourseId && r.student?.id === rosterStudentId
+    );
+    const uiResultId = uiRow?.id ?? "";
+    check("submitted row found for UI action test", Boolean(uiResultId));
+
+    if (uiResultId) {
+      // HOD may open the panel, but must NOT be offered a Publish button
+      // (Laravel enforces this server-side; the buttons must match).
+      const hodTab = makeBrowser("hod@edunexus.edu.ng");
+      await hodTab.login();
+      const hodPage = await hodTab.page(`${NEXT}/admin/results?status=SUBMITTED`);
+      check("HOD sees /admin/results", hodPage.status === 200, `status ${hodPage.status}`);
+      check("HOD is not offered a Publish button", !hodPage.html.includes("Publish</button>"));
+
+      // Act through the browser path: approve via the token-cookie fetch.
+      const approveUi = await adminTab.action(uiResultId, "APPROVE");
+      check(
+        "Approve button action (browser path) works",
+        approveUi.status === 200 && approveUi.payload?.data?.status === "APPROVED",
+        JSON.stringify(approveUi.payload).slice(0, 120)
+      );
+
+      // After approval the page flips to a Publish button.
+      const page2 = await adminTab.page(`${NEXT}/admin/results?status=APPROVED`);
+      check("approved row now offers Publish", page2.html.includes("Publish</button>"));
+
+      // Publish via the same browser path.
+      const publishUi = await adminTab.action(uiResultId, "PUBLISH");
+      check(
+        "Publish button action (browser path) works",
+        publishUi.status === 200 && publishUi.payload?.data?.status === "PUBLISHED",
+        JSON.stringify(publishUi.payload).slice(0, 120)
+      );
+
+      // PUBLISHED rows offer no actions — the panel shows an em dash.
+      const page3 = await adminTab.page(`${NEXT}/admin/results?status=PUBLISHED`);
+      check(
+        "published row shows no further actions",
+        !page3.html.includes("Approve</button>") && !page3.html.includes("Publish</button>") && page3.html.includes(">—</span>"),
+        "published page still offers buttons"
+      );
+    }
+  } catch (err) {
+    check("UI panel section ran to completion", false, String(err).slice(0, 200));
+  }
+}
+
+// ═══ [8] Recovery loop: reject → re-enter → resubmit → approve → publish ═══
+console.log("\n[8] Recovery loop (second-chance workflow)");
 {
   // A PUBLISHED course result can still be re-opened by the lecturer: saving a
   // new draft resets the row to DRAFT (Result::updateOrCreate in the controller).

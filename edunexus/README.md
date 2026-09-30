@@ -88,7 +88,7 @@ Applicants are not seeded — register through the portal with any email and pas
 ```bash
 npm run smoke                  # preflight + full admissions lifecycle (8 sections, 64 checks)
 npm run smoke:testimonials     # preflight + testimonials draft→publish→delete pipeline (13 checks)
-npm run smoke:lecturer         # preflight + lecturer results chain: roster→scores→submit→approve→publish→reject-recovery (39 checks)
+npm run smoke:lecturer         # preflight + lecturer results chain incl. the /admin/results approval UI (8 sections, 54 checks)
 npm test                       # Next unit tests (route logic; no server needed)
 npm run ci:dry-run             # lint the GitHub Actions workflow locally
 cd api && composer smoke       # API-only admissions lifecycle (39 checks)
@@ -174,6 +174,20 @@ GET  /admin/stats|applications|applications/{id}|audit-logs|users|settings|admis
 POST /admin/applications/{id}/actions     {action: REVIEW|SHORTLIST|SCREENING|REQUEST_CORRECTION|REJECT|ADMIT}
 PUT  /admin/settings|admission-windows/{id}   POST /admin/users|admissions/{id}/revoke
 ```
+
+## Brand assets
+
+The brand source images live in the **repository root** (one level above `edunexus/`),
+unreferenced by code — the UI loads its logo/login art from the `SystemSetting`
+branding (`/api/v1/branding/*`), and `public/slides/*.svg` are the only tracked
+image assets the site renders:
+
+- `ChatGPT Image Sep 23, 2026, 04_40_45 PM.png` — concept art (860 KB)
+- `ChatGPT Image Sep 23, 2026, 04_42_18 PM.png` — concept art (1.2 MB)
+- `EduNexus.jpg` — brand logo/wordmark (1.2 MB)
+
+They are committed for safekeeping; move them into a tracked assets folder (and update
+this note) before referencing them from code or build tooling.
 
 ## Configuration (`SystemSetting` / `ApplicationSetting`)
 

@@ -151,6 +151,10 @@ jobs:
         working-directory: edunexus
         run: node scripts/smoke-testimonials.mjs
 
+      - name: Smoke — lecturer results chain incl. admin approval UI (54 checks)
+        working-directory: edunexus
+        run: node scripts/smoke-lecturer.mjs
+
       - name: Server logs on failure
         if: failure()
         working-directory: edunexus

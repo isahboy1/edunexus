@@ -1,6 +1,6 @@
 # Testing
 
-Test suites for the EduNexus platform (Next.js on `:57362` + Laravel API on `:8000`, shared Postgres): HTTP-level smoke suites, node:test unit tests, and Laravel Pest feature tests. CI (`.github/workflows/smoke.yml`) runs preflight, both smokes, the unit tests and `php artisan test` on every push.
+Test suites for the EduNexus platform (Next.js on `:57362` + Laravel API on `:8000`, shared Postgres): HTTP-level smoke suites, node:test unit tests, and Laravel Pest feature tests. CI (`.github/workflows/smoke.yml`) runs preflight, the three smoke suites, the unit tests and `php artisan test` on every push.
 
 ## Prerequisites
 
@@ -46,7 +46,7 @@ Full end-to-end pass against Laravel (`:8000`, positional arg `node scripts/smok
 7. **Admin review & admission** — staff login (`Admin@12345`), review application, admit applicant, plus a hermetic bulk-admit check built on a second applicant driven through the full flow (every setup step is asserted, so a dropped request fails immediately at its own step).
 8. **Admission acceptance → student** — applicant accepts offer; account becomes a student. (Exits early if no admission exists — run sections in order.)
 
-### `npm run smoke:lecturer` — results chain (7 sections, 39 checks)
+### `npm run smoke:lecturer` — results chain (8 sections, 54 checks)
 
 Walks the SRS results workflow end-to-end against seeded demo data (reseed if it fails: `cd api && php artisan db:seed`), and is idempotent across runs:
 
@@ -56,7 +56,8 @@ Walks the SRS results workflow end-to-end against seeded demo data (reseed if it
 4. **HOD privileges** — HOD may APPROVE but is forbidden to PUBLISH (403); re-approving is rejected (422).
 5. **Publication & student visibility** — academic officer publishes; the grade + GPA appear on the student transcript; a "Result published" in-app notification is recorded; draft rows stay invisible.
 6. **Reject path** — a submitted result rejected by the admin stays REJECTED until the lecturer re-enters scores; a PUBLISHED result cannot be rejected.
-7. **Recovery loop** — the full second-chance workflow: the lecturer re-opens a published course with a new draft, the revision is rejected by the admin, corrected scores are re-entered and resubmitted, then approved, published, and verified on the transcript.
+7. **Admin approval UI** — drives `/admin/results` exactly the way the browser does (direct-to-Laravel login + `edunexus_token` cookie, like `login-form.tsx`): a student is redirected away from the panel, the SSR ledger shows the submitted row with its Approve/Reject buttons, HOD gets no Publish button, the Approve and Publish buttons work end-to-end (SUBMITTED → APPROVED → PUBLISHED), and a PUBLISHED row offers no further actions.
+8. **Recovery loop** — the full second-chance workflow: the lecturer re-opens a published course with a new draft, the revision is rejected by the admin, corrected scores are re-entered and resubmitted, then approved, published, and verified on the transcript.
 
 ### `npm test` — unit tests (69 tests, no server needed)
 
