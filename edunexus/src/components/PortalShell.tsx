@@ -131,6 +131,11 @@ export function PortalShell({
    * Keeping the DOM stable means the hover overlay, the pre-paint collapse
    * and React state can never disagree.
    */
+  const scrollToTop = useCallback(() => {
+    setOpen(false); // close the mobile drawer first, if open
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   const navLinks = () => (
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label={`${portal} navigation`}>
       {nav.map((item) => {
@@ -159,6 +164,14 @@ export function PortalShell({
           </Link>
         );
       })}
+      <button
+        type="button"
+        onClick={scrollToTop}
+        className="mt-3 flex w-full items-center gap-2.5 rounded-md border border-white/15 px-3 py-2 text-[13px] font-medium text-brand-100/80 transition hover:bg-white/10 hover:text-white"
+      >
+        <Icon name="chevronUp" className="h-[18px] w-[18px] shrink-0" />
+        <span className="sidebar-label">Scroll to top</span>
+      </button>
     </nav>
   );
 

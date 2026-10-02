@@ -188,6 +188,12 @@ export const IconChevronRight = (p: IconProps) => (
   </Glyph>
 );
 
+export const IconChevronUp = (p: IconProps) => (
+  <Glyph {...p}>
+    <path d="M6 14.5l6-6 6 6" />
+  </Glyph>
+);
+
 export const IconDownload = (p: IconProps) => (
   <Glyph {...p}>
     <path d="M12 4v11M8 11.5l4 4 4-4M5 19h14" />
@@ -320,6 +326,7 @@ export const ICONS = {
   info: IconInfo,
   arrowRight: IconArrowRight,
   chevronRight: IconChevronRight,
+  chevronUp: IconChevronUp,
   download: IconDownload,
   menu: IconMenu,
   x: IconX,

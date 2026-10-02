@@ -35,3 +35,7 @@ edunexus/src/generated/
 Thumbs.db
 desktop.ini
 .freebuff/
+
+# ── local-only credential reports (repo is public) ──────────
+reports/user-login-details.csv
+reports/user-login-details.md
